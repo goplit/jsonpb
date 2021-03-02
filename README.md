@@ -2,10 +2,12 @@
 This is the fork of JsonPB module of gogo/protobuf 
 
 [JsonPB GOGO version](https://github.com/gogo/protobuf/tree/master/jsonpb)
+
 [JsonPB Golang Protobuf version](https://github.com/golang/protobuf/tree/master/jsonpb)
 
 # Why fork
 Additional options for conversion
+
 ## Int64 as number
 When applications on the other end allows int64
 
@@ -16,9 +18,3 @@ as `@type` by default.
 
 With this fork this property is configurable in `Marshaler` and `Unmarshaler`
 structs
-
-# Example
-
-```go
-
-```
