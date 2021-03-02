@@ -65,6 +65,9 @@ type Marshaler struct {
 	// Whether to render enum values as integers, as opposed to string values.
 	EnumsAsInts bool
 
+	// Render int64 as an unquoted number
+	Int64AsInts bool
+
 	// Whether to render fields with zero values.
 	EmitDefaults bool
 
@@ -532,15 +535,16 @@ func (m *Marshaler) marshalField(out *errWriter, prop *proto.Properties, v refle
 func (m *Marshaler) marshalValue(out *errWriter, prop *proto.Properties, v reflect.Value, indent string) error {
 
 	v = reflect.Indirect(v)
+	valueKind := v.Kind()
 
 	// Handle nil pointer
-	if v.Kind() == reflect.Invalid {
+	if valueKind == reflect.Invalid {
 		out.write("null")
 		return out.err
 	}
 
 	// Handle repeated elements.
-	if v.Kind() == reflect.Slice && v.Type().Elem().Kind() != reflect.Uint8 {
+	if valueKind == reflect.Slice && v.Type().Elem().Kind() != reflect.Uint8 {
 		out.write("[")
 		comma := ""
 		for i := 0; i < v.Len(); i++ {
@@ -630,7 +634,7 @@ func (m *Marshaler) marshalValue(out *errWriter, prop *proto.Properties, v refle
 	}
 
 	// Handle nested messages.
-	if v.Kind() == reflect.Struct {
+	if valueKind == reflect.Struct {
 		i := v
 		if v.CanAddr() {
 			i = v.Addr()
@@ -671,7 +675,7 @@ func (m *Marshaler) marshalValue(out *errWriter, prop *proto.Properties, v refle
 
 	// Handle maps.
 	// Since Go randomizes map iteration, we sort keys for stable output.
-	if v.Kind() == reflect.Map {
+	if valueKind == reflect.Map {
 		out.write(`{`)
 		keys := v.MapKeys()
 		sort.Sort(mapKeys(keys))
@@ -726,7 +730,7 @@ func (m *Marshaler) marshalValue(out *errWriter, prop *proto.Properties, v refle
 	}
 
 	// Handle non-finite floats, e.g. NaN, Infinity and -Infinity.
-	if v.Kind() == reflect.Float32 || v.Kind() == reflect.Float64 {
+	if valueKind == reflect.Float32 || valueKind == reflect.Float64 {
 		f := v.Float()
 		var sval string
 		switch {
@@ -748,7 +752,7 @@ func (m *Marshaler) marshalValue(out *errWriter, prop *proto.Properties, v refle
 	if err != nil {
 		return err
 	}
-	needToQuote := string(b[0]) != `"` && (v.Kind() == reflect.Int64 || v.Kind() == reflect.Uint64)
+	needToQuote := string(b[0]) != `"` && ((valueKind == reflect.Int64 || valueKind == reflect.Uint64) && !m.Int64AsInts)
 	if needToQuote {
 		out.write(`"`)
 	}
